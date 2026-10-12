@@ -1,0 +1,1041 @@
+<!DOCTYPE html>
+<html lang="kk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>2D нысандарды құру операциялары</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0e1420;
+    --surface:#141b2b;
+    --surface-2:#1b2436;
+    --border:#293449;
+    --text:#eef2f8;
+    --muted:#8e97ab;
+    --muted-2:#5c6478;
+    --accent:#2fe6c6;
+    --on-accent:#032420;
+    --good:#3fb87a;
+    --bad:#e8483c;
+    --a-col:#2fe6c6;
+    --b-col:#ff9a52;
+    --radius:14px;
+    --radius-sm:8px;
+    --sans:'Manrope',system-ui,-apple-system,sans-serif;
+    --mono:'JetBrains Mono',ui-monospace,monospace;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  html,body{margin:0;padding:0;}
+  body{background:var(--bg);color:var(--text);font-family:var(--sans);line-height:1.55;min-height:100vh;display:flex;flex-direction:column;}
+  ::selection{background:var(--accent);color:var(--on-accent);}
+  h1,h2,h3{font-weight:800;letter-spacing:-0.01em;margin:0 0 .5em;}
+  p{margin:0 0 1em;}
+  code,.mono{font-family:var(--mono);}
+  button{font-family:var(--sans);}
+
+  header{position:sticky;top:0;z-index:20;background:rgba(14,20,32,0.93);backdrop-filter:blur(10px);border-bottom:1px solid var(--border);padding:10px 16px;}
+  .header-row{display:flex;align-items:center;justify-content:space-between;max-width:760px;margin:0 auto;gap:12px;}
+  .brand{display:flex;align-items:center;gap:10px;min-width:0;}
+  .brand-mark{width:28px;height:28px;border-radius:8px;flex:none;background:var(--surface-2);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;}
+  .brand-text{font-size:13px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .brand-text b{color:var(--text);font-weight:700;}
+  .step-count{font-family:var(--mono);font-size:12px;color:var(--muted-2);flex:none;}
+  .progress-track{max-width:760px;margin:8px auto 0;height:4px;background:var(--surface-2);border-radius:4px;overflow:hidden;}
+  .progress-fill{height:100%;border-radius:4px;background:var(--accent);transition:width .35s ease;}
+
+  main{flex:1;display:flex;justify-content:center;padding:28px 16px 120px;}
+  .stage{width:100%;max-width:640px;}
+  .kicker{font-family:var(--mono);font-size:12px;color:var(--muted-2);display:flex;align-items:center;gap:8px;margin-bottom:10px;}
+  .kicker .num{color:var(--on-accent);background:var(--accent);font-weight:700;min-width:20px;height:20px;padding:0 5px;border-radius:5px;display:inline-flex;align-items:center;justify-content:center;font-size:11px;}
+  .stage h2{font-size:clamp(22px,5.5vw,30px);}
+  .lede{color:var(--muted);font-size:15px;}
+
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px;margin:16px 0;}
+  .fact{border-left:3px solid var(--accent);background:var(--surface-2);border-radius:0 var(--radius-sm) var(--radius-sm) 0;padding:12px 14px;font-size:14px;color:var(--muted);margin:14px 0;}
+  .fact b{color:var(--text);}
+  ul.plain{margin:0 0 1em;padding-left:20px;}
+  ul.plain li{margin-bottom:6px;}
+
+  /* shape gallery */
+  .shape-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:14px 0;}
+  .shape-cell{border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--surface-2);padding:10px 6px 8px;text-align:center;}
+  .shape-cell svg{display:block;margin:4px auto 6px;}
+  .shape-cell span{font-size:11px;color:var(--muted);}
+
+  /* op/hotkey tables */
+  .op-table{width:100%;border-collapse:collapse;margin:12px 0;font-size:13.5px;}
+  .op-table th,.op-table td{text-align:left;padding:8px 8px;border-bottom:1px solid var(--border);}
+  .op-table th{color:var(--muted);font-weight:600;font-size:11.5px;text-transform:uppercase;letter-spacing:.02em;}
+  .op-table td.key{font-family:var(--mono);color:var(--accent);white-space:nowrap;}
+
+  /* fields */
+  .field{margin-bottom:16px;}
+  .field label{display:block;font-size:13px;color:var(--muted);margin-bottom:6px;}
+  .field input[type=text]{width:100%;padding:13px 14px;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--surface-2);color:var(--text);font-size:15px;font-family:var(--sans);}
+  .field input[type=text]:focus, textarea:focus, select:focus{outline:2px solid var(--accent);outline-offset:1px;}
+  textarea{width:100%;min-height:100px;padding:13px 14px;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--surface-2);color:var(--text);font-size:15px;font-family:var(--sans);resize:vertical;}
+
+  /* task */
+  .task-card{border:1px solid var(--border);border-radius:var(--radius);background:var(--surface);overflow:hidden;margin-top:10px;}
+  .task-head{padding:14px 18px;background:var(--surface-2);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;}
+  .task-badge{font-family:var(--mono);font-size:11px;font-weight:700;color:var(--on-accent);background:var(--accent);padding:3px 8px;border-radius:6px;flex:none;}
+  .task-head h3{font-size:16px;margin:0;}
+  .task-body{padding:18px;}
+  .q{font-weight:600;font-size:15px;}
+
+  .opt-list{display:flex;flex-direction:column;gap:9px;}
+  .opt{display:flex;align-items:center;gap:11px;text-align:left;padding:13px 14px;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--surface-2);color:var(--text);font-size:14.5px;cursor:pointer;width:100%;transition:border-color .15s, background .15s;}
+  .opt:hover{border-color:var(--muted-2);}
+  .opt .mark{width:20px;height:20px;border-radius:6px;border:2px solid var(--muted-2);flex:none;}
+  .opt.circle .mark{border-radius:50%;}
+  .opt.selected{border-color:var(--accent);background:rgba(47,230,198,0.10);}
+  .opt.selected .mark{border-color:var(--accent);background:var(--accent);}
+  .opt.correct{border-color:var(--good);background:rgba(63,184,122,0.14);}
+  .opt.correct .mark{border-color:var(--good);background:var(--good);}
+  .opt.wrong{border-color:var(--bad);background:rgba(232,72,60,0.14);}
+  .opt.wrong .mark{border-color:var(--bad);background:var(--bad);}
+  .opt:disabled{cursor:default;}
+
+  .btn{appearance:none;border:none;cursor:pointer;font-weight:700;font-size:14.5px;padding:13px 20px;border-radius:10px;min-height:46px;}
+  .btn-primary{background:var(--accent);color:var(--on-accent);}
+  .btn-primary:disabled{background:var(--surface-2);color:var(--muted-2);cursor:not-allowed;}
+  .btn-ghost{background:transparent;color:var(--text);border:1px solid var(--border);}
+  .btn-good{background:var(--good);color:#08130c;}
+  .btn-good:disabled{background:var(--surface-2);color:var(--muted-2);cursor:not-allowed;}
+  .btn-block{width:100%;}
+  .btn-row{display:flex;gap:10px;margin-top:16px;}
+
+  .feedback{margin-top:14px;padding:12px 14px;border-radius:var(--radius-sm);font-size:14px;display:none;}
+  .feedback.show{display:block;}
+  .feedback.ok{background:rgba(63,184,122,0.12);border:1px solid rgba(63,184,122,0.4);color:#bdf0d3;}
+  .feedback.mid{background:rgba(226,197,60,0.12);border:1px solid rgba(226,197,60,0.4);color:#f2e6ad;}
+  .feedback.bad{background:rgba(232,72,60,0.12);border:1px solid rgba(232,72,60,0.4);color:#f5c3be;}
+  .feedback .score{font-family:var(--mono);font-weight:700;display:block;margin-bottom:4px;}
+
+  .classify-item{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 14px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--surface-2);margin-bottom:8px;flex-wrap:wrap;}
+  .classify-item .txt{font-size:15px;flex:1 1 170px;font-family:var(--mono);}
+  .pill-row{display:flex;gap:6px;flex:none;}
+  .pill{padding:8px 12px;border-radius:20px;border:1px solid var(--border);background:var(--surface);color:var(--muted);font-size:12.5px;font-weight:700;cursor:pointer;}
+  .pill.sel-a{border-color:var(--a-col);background:rgba(47,230,198,0.16);color:#bdf5ec;}
+  .pill.sel-b{border-color:var(--b-col);background:rgba(255,154,82,0.16);color:#ffd9b8;}
+  .pill.right{border-color:var(--good)!important;}
+  .pill.wrong{border-color:var(--bad)!important;}
+
+  .match-item{margin-bottom:12px;}
+  .match-item .term{font-weight:700;font-size:14px;margin-bottom:6px;}
+  .term .chip{font-family:var(--mono);font-size:12px;padding:3px 8px;border-radius:5px;background:var(--surface-2);color:var(--accent);}
+  select{width:100%;padding:12px 14px;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--surface-2);color:var(--text);font-size:14px;font-family:var(--sans);}
+
+  .tf-item{padding:13px 14px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--surface-2);margin-bottom:10px;}
+  .tf-item .stmt{font-size:14px;margin-bottom:10px;}
+  .tf-btns{display:flex;gap:8px;}
+  .tf-btn{flex:1;padding:10px;border-radius:8px;border:1px solid var(--border);background:var(--surface);color:var(--text);font-weight:700;font-size:13px;cursor:pointer;}
+  .tf-btn.sel-true{border-color:var(--good);background:rgba(63,184,122,0.16);}
+  .tf-btn.sel-false{border-color:var(--bad);background:rgba(232,72,60,0.16);}
+  .tf-btn.right{outline:2px solid var(--good);}
+  .tf-btn.wrong{outline:2px solid var(--bad);}
+
+  .order-item{display:flex;align-items:center;gap:10px;padding:12px 14px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--surface-2);margin-bottom:8px;}
+  .order-item .idx{font-family:var(--mono);font-weight:700;color:var(--muted-2);width:18px;flex:none;}
+  .order-item .txt{flex:1;font-size:13.5px;}
+  .order-btns{display:flex;flex-direction:column;gap:4px;flex:none;}
+  .order-btns button{width:30px;height:24px;border-radius:5px;border:1px solid var(--border);background:var(--surface);color:var(--text);cursor:pointer;font-size:12px;line-height:1;}
+  .order-btns button:disabled{opacity:.3;cursor:default;}
+
+  /* tune */
+  .preview-box{border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--surface-2);padding:18px 16px;margin:12px 0 14px;overflow:hidden;text-align:center;}
+  .slider-row .slabel{display:flex;justify-content:space-between;font-family:var(--mono);font-size:12.5px;margin-bottom:4px;color:var(--muted);}
+  .slider-row .slabel span:last-child{color:var(--accent);font-weight:700;}
+  input[type=range]{width:100%;height:34px;-webkit-appearance:none;background:transparent;cursor:pointer;}
+  input[type=range]::-webkit-slider-runnable-track{height:8px;border-radius:8px;background:var(--border);}
+  input[type=range]::-moz-range-track{height:8px;border-radius:8px;background:var(--border);}
+  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:26px;height:26px;border-radius:50%;background:var(--accent);border:3px solid #fff;margin-top:-9px;}
+  input[type=range]::-moz-range-thumb{width:26px;height:26px;border-radius:50%;background:var(--accent);border:3px solid #fff;}
+  input[type=range]:disabled{opacity:.5;cursor:default;}
+
+  table.results{width:100%;border-collapse:collapse;font-size:13.5px;margin:14px 0;}
+  table.results th, table.results td{text-align:left;padding:9px 8px;border-bottom:1px solid var(--border);}
+  table.results th{color:var(--muted);font-weight:600;font-size:12px;}
+  table.results td.sc{font-family:var(--mono);text-align:right;}
+  .total-row td{font-weight:800;border-top:2px solid var(--border);border-bottom:none;}
+  .status-line{font-size:13.5px;padding:10px 12px;border-radius:8px;margin-top:12px;display:none;}
+  .status-line.show{display:block;}
+  .status-line.ok{background:rgba(63,184,122,0.14);color:#bdf0d3;}
+  .status-line.bad{background:rgba(232,72,60,0.14);color:#f5c3be;}
+  .status-line.wait{background:var(--surface-2);color:var(--muted);}
+
+  .checklist{margin:0 0 14px;padding:0;list-style:none;}
+  .checklist li{display:flex;gap:10px;padding:10px 0;border-bottom:1px solid var(--border);font-size:14px;}
+  .checklist li:last-child{border-bottom:none;}
+  .checklist .n{font-family:var(--mono);font-weight:700;color:var(--accent);flex:none;width:20px;}
+
+  .navbar{position:fixed;bottom:0;left:0;right:0;z-index:20;background:rgba(14,20,32,0.95);backdrop-filter:blur(10px);border-top:1px solid var(--border);padding:12px 16px calc(12px + env(safe-area-inset-bottom));}
+  .navbar-inner{max-width:640px;margin:0 auto;display:flex;gap:10px;align-items:center;}
+  .navbar .btn{flex:1;}
+  .navbar .hint{font-size:11.5px;color:var(--muted-2);text-align:center;width:100%;margin-top:6px;min-height:1em;}
+
+  @media (max-width:480px){
+    .card{padding:16px;}
+    .task-body{padding:14px;}
+    .shape-grid{grid-template-columns:repeat(3,1fr);}
+  }
+  @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important;}}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-row">
+    <div class="brand">
+      <div class="brand-mark">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+          <rect x="1" y="1" width="8" height="8" rx="1.5" stroke="#2fe6c6" stroke-width="1.4"/>
+          <circle cx="12" cy="12" r="3.3" stroke="#ff9a52" stroke-width="1.4"/>
+        </svg>
+      </div>
+      <div class="brand-text"><b>2D нысандарды құру операциялары</b> · графика және жобалау</div>
+    </div>
+    <div class="step-count" id="stepCount">1 / 1</div>
+  </div>
+  <div class="progress-track"><div class="progress-fill" id="progressFill" style="width:4%"></div></div>
+</header>
+
+<main><div class="stage" id="stage"></div></main>
+
+<div class="navbar">
+  <div class="navbar-inner">
+    <button class="btn btn-ghost" id="btnBack">Артқа</button>
+    <button class="btn btn-primary" id="btnNext" style="flex:2;">Бастау</button>
+  </div>
+  <div class="hint" id="navHint"></div>
+</div>
+
+<script>
+/* =========================================================
+   PASTE YOUR GOOGLE APPS SCRIPT WEB APP URL HERE
+========================================================= */
+const SCRIPT_URL = "PASTE_YOUR_GOOGLE_APPS_SCRIPT_URL_HERE";
+
+const state = {
+  group:"", name:"", cur:0,
+  answers:{},
+  practical:"", homework:"", homeworkFormats:"", reflection:"",
+  sent:false, sending:false
+};
+
+/* ===================== LECTURES ===================== */
+const LECTURES = {
+  intro:{ time:"4 мин", title:"2D нысандар дегеніміз не?",
+    body:`
+      <p><b>2D (екі өлшемді) нысандар</b> — графикалық редакторларда ені мен биіктігі ғана болатын, тереңдігі (3D өлшемі) жоқ геометриялық фигуралар. Олар векторлық графиканың негізгі құрылыс материалдары болып табылады.</p>
+      <div class="shape-grid">
+        <div class="shape-cell"><svg width="48" height="40" viewBox="0 0 48 40"><rect x="6" y="8" width="36" height="24" rx="2" fill="none" stroke="#2fe6c6" stroke-width="2.4"/></svg><span>Тіктөртбұрыш</span></div>
+        <div class="shape-cell"><svg width="48" height="40" viewBox="0 0 48 40"><circle cx="24" cy="20" r="15" fill="none" stroke="#2fe6c6" stroke-width="2.4"/></svg><span>Шеңбер</span></div>
+        <div class="shape-cell"><svg width="48" height="40" viewBox="0 0 48 40"><ellipse cx="24" cy="20" rx="18" ry="11" fill="none" stroke="#2fe6c6" stroke-width="2.4"/></svg><span>Эллипс</span></div>
+        <div class="shape-cell"><svg width="48" height="40" viewBox="0 0 48 40"><polygon points="24,6 40,16 34,34 14,34 8,16" fill="none" stroke="#ff9a52" stroke-width="2.4"/></svg><span>Көпбұрыш</span></div>
+        <div class="shape-cell"><svg width="48" height="40" viewBox="0 0 48 40"><polygon points="24,5 29,16 41,16 31,23 35,35 24,27 13,35 17,23 7,16 19,16" fill="none" stroke="#ff9a52" stroke-width="2"/></svg><span>Жұлдыз</span></div>
+        <div class="shape-cell"><svg width="48" height="40" viewBox="0 0 48 40"><line x1="8" y1="30" x2="40" y2="10" stroke="#2fe6c6" stroke-width="2.4"/></svg><span>Сызық</span></div>
+        <div class="shape-cell"><svg width="48" height="40" viewBox="0 0 48 40"><path d="M6 30 C14 6, 34 34, 42 10" fill="none" stroke="#2fe6c6" stroke-width="2.4"/></svg><span>Қисық</span></div>
+        <div class="shape-cell"><svg width="48" height="40" viewBox="0 0 48 40"><path d="M8 28 C10 10, 22 8, 24 18 C26 30, 36 14, 40 12" fill="none" stroke="#ff9a52" stroke-width="2.4" stroke-linecap="round"/></svg><span>Еркін пішін</span></div>
+      </div>
+      <div class="fact"><b>Неге маңызды?</b> Бұл сегіз пішін — Illustrator, Photoshop, Canva сияқты кез келген графикалық редактордағы барлық күрделі композициялардың негізгі «кірпіштері».</div>
+    `},
+  create:{ time:"5 мин", title:"«Құру» (Create) операциясы",
+    body:`
+      <p><b>«Құру»</b> — графикалық редакторда жаңа 2D нысанды салу процесі.</p>
+      <table class="op-table">
+        <thead><tr><th>Құрал</th><th>Бағдарлама</th><th>Перне</th></tr></thead>
+        <tbody>
+          <tr><td>Rectangle Tool</td><td>Illustrator, Photoshop</td><td class="key">M</td></tr>
+          <tr><td>Ellipse Tool</td><td>Illustrator, Photoshop</td><td class="key">L</td></tr>
+          <tr><td>Polygon Tool</td><td>Illustrator</td><td class="key">—</td></tr>
+          <tr><td>Star Tool</td><td>Illustrator</td><td class="key">—</td></tr>
+          <tr><td>Line Segment Tool</td><td>Illustrator</td><td class="key">\\</td></tr>
+          <tr><td>Pen Tool</td><td>Illustrator, Photoshop</td><td class="key">P</td></tr>
+          <tr><td>Pencil Tool</td><td>Illustrator, Photoshop</td><td class="key">N</td></tr>
+          <tr><td>Shape Tool</td><td>Canva</td><td class="key">—</td></tr>
+        </tbody>
+      </table>
+      <p><b>Модификатор пернелер:</b></p>
+      <ul class="plain">
+        <li><b>Shift</b> — пропорционалды өлшем (мысалы, квадрат немесе дөңгелек шеңбер шығады)</li>
+        <li><b>Alt</b> — нысанды орталықтан бастап салу</li>
+        <li><b>Shift + Alt</b> — орталықтан пропорционалды салу</li>
+      </ul>
+    `},
+  copyop:{ time:"3 мин", title:"«Көшіру» (Copy) операциясы",
+    body:`
+      <p><b>«Көшіру»</b> — таңдалған нысанды алмасу буферіне (Clipboard) көшіру. Бұл операция нысанның өзін өзгертпейді, тек оның көшірмесін жадыда сақтайды.</p>
+      <table class="op-table">
+        <thead><tr><th>Тәсіл</th><th>Перне</th></tr></thead>
+        <tbody>
+          <tr><td>Copy</td><td class="key">Ctrl + C</td></tr>
+          <tr><td>Cut</td><td class="key">Ctrl + X</td></tr>
+          <tr><td>Paste</td><td class="key">Ctrl + V</td></tr>
+          <tr><td>Paste in Front</td><td class="key">Ctrl + F</td></tr>
+          <tr><td>Paste in Back</td><td class="key">Ctrl + B</td></tr>
+          <tr><td>Paste in Place</td><td class="key">Ctrl + Shift + V</td></tr>
+        </tbody>
+      </table>
+      <div class="fact"><b>Маңызды:</b> «Көшіру» буферді пайдаланғандықтан, нысанды бір құжаттан екінші құжатқа көшіруге мүмкіндік береді — мысалы, Illustrator-дағы логотипті Photoshop-қа көшіруге болады.</div>
+    `},
+  duplicate:{ time:"4 мин", title:"«Көшірме» (Duplicate) операциясы",
+    body:`
+      <p><b>«Көшірме»</b> — таңдалған нысанның дәл сол құжат ішіндегі көшірмесін жасау. Бұл «көшіруден» өзгеше: буферді пайдаланбайды, нысан бірден жаңа көшірме ретінде пайда болады.</p>
+      <table class="op-table">
+        <thead><tr><th>Тәсіл</th><th>Перне</th></tr></thead>
+        <tbody>
+          <tr><td>Duplicate</td><td class="key">Ctrl + D</td></tr>
+          <tr><td>Alt + сүйреу</td><td class="key">Alt + тінтуір</td></tr>
+          <tr><td>Көшіріп жылжыту</td><td class="key">Ctrl + Alt + сүйреу</td></tr>
+        </tbody>
+      </table>
+      <table class="op-table">
+        <thead><tr><th>Белгісі</th><th>Көшіру</th><th>Көшірме</th></tr></thead>
+        <tbody>
+          <tr><td>Буфер</td><td>Пайдаланады</td><td>Пайдаланбайды</td></tr>
+          <tr><td>Құжаттар арасы</td><td>Мүмкін</td><td>Тек сол құжат ішінде</td></tr>
+          <tr><td>Жылдамдық</td><td>Баяуырақ</td><td>Жылдамырақ</td></tr>
+        </tbody>
+      </table>
+    `},
+  deleteop:{ time:"3 мин", title:"«Жою» (Delete) операциясы",
+    body:`
+      <p><b>«Жою»</b> — таңдалған нысанды құжаттан алып тастау. Бұл операция қайтымды (Undo арқылы) немесе қайтымсыз (History-ден тазалау) болуы мүмкін.</p>
+      <table class="op-table">
+        <thead><tr><th>Тәсіл</th><th>Перне</th></tr></thead>
+        <tbody>
+          <tr><td>Delete / Backspace</td><td class="key">Delete</td></tr>
+          <tr><td>Cut (жою + буферге сақтау)</td><td class="key">Ctrl + X</td></tr>
+          <tr><td>Undo</td><td class="key">Ctrl + Z</td></tr>
+          <tr><td>Redo</td><td class="key">Ctrl + Shift + Z</td></tr>
+          <tr><td>History панелі</td><td class="key">Window > History</td></tr>
+        </tbody>
+      </table>
+      <div class="fact"><b>Пайдалы тәсіл:</b> нысанды мүлде жоймай, уақытша жасыру керек болса — Ctrl + 3 (Hide) немесе Opacity мәнін 0%-ға түсіру қолданылады.</div>
+    `},
+  save:{ time:"4 мин", title:"«Сақтау» (Save) операциясы",
+    body:`
+      <p><b>«Сақтау»</b> — жасалған жұмысты компьютердің жадына немесе сыртқы құрылғыға жазу.</p>
+      <table class="op-table">
+        <thead><tr><th>Тәсіл</th><th>Перне</th></tr></thead>
+        <tbody>
+          <tr><td>Save</td><td class="key">Ctrl + S</td></tr>
+          <tr><td>Save As</td><td class="key">Ctrl + Shift + S</td></tr>
+          <tr><td>Save a Copy</td><td class="key">Ctrl + Alt + S</td></tr>
+          <tr><td>Export</td><td class="key">File > Export</td></tr>
+          <tr><td>Save for Web</td><td class="key">Ctrl + Shift + Alt + S</td></tr>
+        </tbody>
+      </table>
+      <p><b>Сақтау кезеңдері:</b> File > Save таңдау → файл атауын енгізу → сақталатын орынды таңдау → форматты таңдау → қосымша параметрлерді реттеу (Color Mode, Resolution, Compression) → Save басу.</p>
+    `},
+  formats:{ time:"4 мин", title:"Сақтау форматтары",
+    body:`
+      <table class="op-table">
+        <thead><tr><th>Формат</th><th>Бағдарлама</th><th>Қолданылуы</th></tr></thead>
+        <tbody>
+          <tr><td>.AI</td><td>Illustrator</td><td>Векторлық жобаны сақтау</td></tr>
+          <tr><td>.PSD</td><td>Photoshop</td><td>Растрлық жобаны сақтау</td></tr>
+          <tr><td>.SVG</td><td>Illustrator, Canva</td><td>Веб-үшін векторлық формат</td></tr>
+          <tr><td>.PNG</td><td>Барлығы</td><td>Мөлдір фоны бар растрлық формат</td></tr>
+          <tr><td>.JPEG</td><td>Барлығы</td><td>Фотосуреттер үшін растрлық формат</td></tr>
+          <tr><td>.PDF</td><td>Барлығы</td><td>Баспаға дайын құжат</td></tr>
+          <tr><td>.EPS</td><td>Illustrator</td><td>Баспаға арналған векторлық формат</td></tr>
+          <tr><td>.TIFF</td><td>Photoshop</td><td>Жоғары сапалы баспа форматы</td></tr>
+        </tbody>
+      </table>
+      <div class="fact"><b>Таңдау ережесі:</b> жобаны әрі қарай өңдеу үшін — .AI/.PSD (жұмыс форматы), вебке — .SVG/.PNG/.JPEG, баспаға — .PDF/.EPS/.TIFF (CMYK режимінде).</div>
+    `}
+};
+
+/* ===================== TASKS ===================== */
+const TASKS = [
+  { id:1, type:"mcq", time:"2 мин",
+    q:"2D (екі өлшемді) нысан дегеніміз не?",
+    options:[
+      "Ені, биіктігі және тереңдігі (3D өлшемі) бар фигура",
+      "Ені мен биіктігі ғана бар, тереңдігі (3D өлшемі) жоқ геометриялық фигура",
+      "Тек түрлі-түсті пиксельдер жиынтығы",
+      "Тек мәтіндік объект"
+    ],
+    correct:1,
+    explain:"2D нысандар — ені мен биіктігі ғана болатын, тереңдігі жоқ геометриялық фигуралар. Олар векторлық графиканың негізгі құрылыс материалдары."
+  },
+  { id:2, type:"match", time:"3 мин",
+    q:"Әр құралға сәйкес ыстық перне мен қызметін сәйкестендіріңіз.",
+    terms:["Rectangle Tool","Ellipse Tool","Pen Tool","Line Segment Tool"],
+    correctDesc:[
+      "M — тіктөртбұрыш салу",
+      "L — шеңбер/эллипс салу",
+      "P — Безье қисықтарын салу",
+      "\\ — түзу сызық салу"
+    ]
+  },
+  { id:10, type:"mcq", time:"2 мин",
+    q:"Безье қисықтары арқылы еркін пішін сызу үшін қай құрал мен ыстық перне қолданылады?",
+    options:["Rectangle Tool (M)","Ellipse Tool (L)","Pen Tool (P)","Pencil Tool (N)"],
+    correct:2,
+    explain:"Pen Tool (P) — түйіндік нүктелер мен бағыттауыш тұтқалар арқылы Безье қисықтарын салатын негізгі құрал."
+  },
+  { id:3, type:"classify", time:"3 мин",
+    q:"Әр ыстық перне/тәсіл қай операцияға жататынын белгілеңіз.",
+    labelA:"Көшіру (Copy)", labelB:"Көшірме (Duplicate)",
+    items:[
+      {txt:"Ctrl + C", ans:"a"},
+      {txt:"Ctrl + V", ans:"a"},
+      {txt:"Ctrl + D", ans:"b"},
+      {txt:"Alt + сүйреу", ans:"b"},
+      {txt:"Ctrl + Shift + V", ans:"a"},
+      {txt:"Ctrl + Alt + сүйреу", ans:"b"}
+    ]
+  },
+  { id:4, type:"mcq", time:"2 мин",
+    q:"«Көшіру» мен «Көшірме» арасындағы негізгі айырмашылық неде?",
+    options:[
+      "Айырмашылығы жоқ, екеуі бірдей жұмыс істейді",
+      "Көшіру алмасу буферін пайдаланады және құжаттар арасында көшіруге болады; Көшірме буферсіз, тек сол құжат ішінде жұмыс істейді",
+      "Көшірме тек суреттерге, Көшіру тек мәтінге арналған",
+      "Көшіру тек Photoshop-та, Көшірме тек Illustrator-да бар"
+    ],
+    correct:1,
+    explain:"Көшіру (Ctrl+C/V) Clipboard буферін пайдаланады және құжаттар арасында жұмыс істейді. Көшірме (Ctrl+D, Alt+сүйреу) буферсіз, тек сол құжат ішінде, әрі жылдамырақ."
+  },
+  { id:5, type:"tf", time:"3 мин",
+    q:"Дұрыс па, бұрыс па?",
+    statements:[
+      {s:"«Жою» операциясын Ctrl+Z арқылы болдырмауға (Undo) болады.", correct:true},
+      {s:"Delete пернесі нысанды толығымен, қайтарымсыз жояды — Undo мүмкін емес.", correct:false},
+      {s:"Ctrl+X нысанды жояды әрі оны буферге сақтайды.", correct:true},
+      {s:"Нысанды уақытша жасыру үшін оны міндетті түрде жою керек.", correct:false},
+      {s:"History панелі арқылы бірнеше қадамды артқа қайтаруға болады.", correct:true}
+    ]
+  },
+  { id:9, type:"tune", time:"3 мин",
+    q:"Нысанды жоймай, уақытша жасыру үшін Opacity (мөлдірлік) мәнін реттеңіз — нысан көзге көрінбесін.",
+    sample:"⬤",
+    sampleStyle:"font-size:100px;color:#2fe6c6;line-height:1;",
+    prop:"opacity", unit:"", min:0, max:1, step:0.05, start:1, ideal:[0,0.05],
+    label:"opacity",
+    explain:"Opacity = 0 нысанды жоймай-ақ көрінбейтін етеді — файлдан өшірілмейді, кез келген сәтте қайта көрсетуге болады (Delete-тен айырмашылығы осында)."
+  },
+  { id:6, type:"order", time:"3 мин",
+    q:"Файлды «Save As» арқылы сақтау қадамдарының дұрыс ретін белгілеңіз.",
+    correctOrder:[
+      "File > Save (немесе Ctrl + S) таңдау",
+      "Файл атауын енгізу",
+      "Сақталатын орынды таңдау",
+      "Форматты таңдау",
+      "Қосымша параметрлерді реттеу (Color Mode, Resolution, Compression)",
+      "Save басу"
+    ]
+  },
+  { id:7, type:"number", time:"2 мин",
+    q:"Үй тапсырмасындағы композицияда кемінде неше түрлі 2D нысан қолдану керек?",
+    answer:8, unitHint:"түрлі нысан"
+  },
+  { id:8, type:"multi", time:"3 мин",
+    q:"Веб-сайтқа жүктеуге қолайлы файл форматтарын таңдаңыз (3 дұрыс жауап).",
+    options:[".SVG",".PNG",".AI",".JPEG",".PSD"],
+    correctIdx:[0,1,3]
+  }
+];
+
+/* ===================== STEPS ===================== */
+const steps = [
+  {type:"start"},
+  {type:"lecture", key:"intro"},     {type:"task", task:TASKS[0]},
+  {type:"lecture", key:"create"},    {type:"task", task:TASKS[1]}, {type:"task", task:TASKS[2]},
+  {type:"lecture", key:"copyop"},
+  {type:"lecture", key:"duplicate"}, {type:"task", task:TASKS[3]}, {type:"task", task:TASKS[4]},
+  {type:"lecture", key:"deleteop"},  {type:"task", task:TASKS[5]}, {type:"task", task:TASKS[6]},
+  {type:"lecture", key:"save"},      {type:"task", task:TASKS[7]},
+  {type:"lecture", key:"formats"},   {type:"task", task:TASKS[8]}, {type:"task", task:TASKS[9]},
+  {type:"practical"},
+  {type:"homework"},
+  {type:"reflection"},
+  {type:"results"}
+];
+
+const stageEl = document.getElementById('stage');
+const btnBack = document.getElementById('btnBack');
+const btnNext = document.getElementById('btnNext');
+const navHint = document.getElementById('navHint');
+const stepCountEl = document.getElementById('stepCount');
+const progressFillEl = document.getElementById('progressFill');
+
+function esc(str){ return String(str).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
+function kicker(n, time, title){ return `<div class="kicker"><span class="num">${n}</span><span>Бөлім</span><span>· ${time}</span></div><h2>${title}</h2>`; }
+
+/* ===================== RENDER ===================== */
+function render(){
+  const step = steps[state.cur];
+  stageEl.innerHTML = "";
+  stepCountEl.textContent = `${state.cur+1} / ${steps.length}`;
+  progressFillEl.style.width = Math.round(((state.cur+1)/steps.length)*100) + "%";
+
+  if(step.type === "start") renderStart();
+  else if(step.type === "lecture") renderLecture(step.key);
+  else if(step.type === "task") renderTask(step.task);
+  else if(step.type === "practical") renderPractical();
+  else if(step.type === "homework") renderHomework();
+  else if(step.type === "reflection") renderReflection();
+  else if(step.type === "results") renderResults();
+
+  updateNav();
+  window.scrollTo({top:0});
+}
+
+function updateNav(){
+  const step = steps[state.cur];
+  btnBack.style.visibility = state.cur === 0 ? "hidden" : "visible";
+  navHint.textContent = "";
+  if(step.type === "start"){
+    btnNext.textContent = "Бастау";
+    btnNext.disabled = !(state.group.trim() && state.name.trim());
+    navHint.textContent = btnNext.disabled ? "Жалғастыру үшін топ пен атыңызды енгізіңіз" : "";
+  } else if(step.type === "task"){
+    const done = !!state.answers[step.task.id];
+    btnNext.textContent = "Келесі";
+    btnNext.disabled = !done;
+    navHint.textContent = done ? "" : "Жалғастыру үшін тапсырманы тексеріңіз";
+  } else if(step.type === "results"){
+    btnNext.textContent = state.sent ? "Аяқталды ✓" : (state.sending ? "Жіберілуде..." : "Нәтижені жіберу");
+    btnNext.disabled = !!(state.sent || state.sending);
+  } else {
+    btnNext.textContent = "Келесі";
+    btnNext.disabled = false;
+  }
+}
+
+/* ---------- START ---------- */
+function renderStart(){
+  stageEl.innerHTML = `
+    ${kicker(1,"85 минут","2D нысандарды құру операциялары")}
+    <p class="lede">Бұл сабақта сіз 2D нысандарды құру, көшіру, көшірме жасау, жою және сақтау операцияларымен, олардың ыстық пернелерімен танысасыз — 10 интерактивті тапсырма арқылы бекітесіз.</p>
+    <div class="card">
+      <div class="field">
+        <label for="inpGroup">Оқу тобы</label>
+        <input type="text" id="inpGroup" placeholder="мысалы, Д-21" value="${esc(state.group)}">
+      </div>
+      <div class="field" style="margin-bottom:0;">
+        <label for="inpName">Аты-жөніңіз</label>
+        <input type="text" id="inpName" placeholder="мысалы, Асан Асанов" value="${esc(state.name)}">
+      </div>
+    </div>
+    <div class="fact"><b>Сабақ жоспары:</b> 7 қысқа теориялық блок (әрқайсысынан кейін тапсырма), практикалық дизайн-сессия, үй тапсырмасы және рефлексия. Нәтиже соңында мұғалімнің Google Кестесіне бір рет жіберіледі.</div>
+  `;
+  document.getElementById('inpGroup').addEventListener('input', e => { state.group = e.target.value; updateNav(); });
+  document.getElementById('inpName').addEventListener('input', e => { state.name = e.target.value; updateNav(); });
+}
+
+function renderLecture(key){
+  const l = LECTURES[key];
+  const n = Object.keys(LECTURES).indexOf(key)+1;
+  stageEl.innerHTML = `${kicker("Л"+n, l.time, l.title)}<div class="card">${l.body}</div>`;
+}
+
+function renderPractical(){
+  stageEl.innerHTML = `
+    ${kicker("П","35 мин","Практикалық дизайн-сессия")}
+    <p class="lede">«2D нысандардан геометриялық композиция құру» — компьютерде (Adobe Illustrator, Photoshop немесе Canva) орындалады.</p>
+    <div class="card">
+      <ul class="checklist">
+        <li><span class="n">1</span><span>Жаңа құжат ашыңыз: 1920×1080 px, RGB, 72 ppi.</span></li>
+        <li><span class="n">2</span><span>Кемінде 5 түрлі 2D нысан құрыңыз: тіктөртбұрыш (400×300), шеңбер (200×200), 6 қабырғалы көпбұрыш, 5 сәулелі жұлдыз, көлденең сызық.</span></li>
+        <li><span class="n">3</span><span>«Көшіру» (Ctrl+C/V) және «Көшірме» (Ctrl+D, Alt+сүйреу) арқылы әр нысанның кемінде 2 көшірмесін жасаңыз; Ctrl+G арқылы топтастырыңыз.</span></li>
+        <li><span class="n">4</span><span>Артық нысандарды Delete-пен жойып, Ctrl+Z арқылы қайтару тәжірибесін жасаңыз.</span></li>
+        <li><span class="n">5</span><span>Дайын композицияны .AI/.PSD (жұмыс файлы) және .PNG/.SVG (экспорт) форматтарында сақтаңыз.</span></li>
+      </ul>
+      <div class="field" style="margin-bottom:0;">
+        <label for="practicalText">Не жасадыңыз? Қай бағдарламаны қолдандыңыз, нені құрастырдыңыз?</label>
+        <textarea id="practicalText" placeholder="Мысалы: Illustrator-да 5 нысаннан композиция жасадым, әрқайсысын 2 рет көшірдім, .AI және .PNG форматында сақтадым...">${esc(state.practical)}</textarea>
+      </div>
+    </div>`;
+  document.getElementById('practicalText').addEventListener('input', e=>{ state.practical = e.target.value; });
+}
+
+function renderHomework(){
+  stageEl.innerHTML = `
+    ${kicker("ҮТ","2 мин","Үй тапсырмасы")}
+    <p class="lede">«Менің қалам» тақырыбында 2D нысандардан тұратын композиция.</p>
+    <div class="card">
+      <ul class="checklist">
+        <li><span class="n">1</span><span>Adobe Illustrator немесе Canva бағдарламасында «Менің қалам» тақырыбында композиция дайындаңыз.</span></li>
+        <li><span class="n">2</span><span>Кемінде 8 түрлі 2D нысан қолданыңыз (тіктөртбұрыш, шеңбер, эллипс, көпбұрыш, жұлдыз, сызық, қисық, еркін пішін).</span></li>
+        <li><span class="n">3</span><span>Әр нысанның кемінде 2 көшірмесін жасаңыз; «құру», «көшіру», «көшірме», «жою», «сақтау» операцияларын толық қолданыңыз.</span></li>
+        <li><span class="n">4</span><span>Жұмысты .AI (немесе .PSD) және .PNG форматтарында сақтап әкеліңіз.</span></li>
+      </ul>
+      <div class="field">
+        <label for="hwText">Жоба сипаттамасы — әр операцияны қалай қолдандыңыз?</label>
+        <textarea id="hwText" placeholder="Мысалы: 8 нысаннан қала композициясын жасадым, ғимараттарды тіктөртбұрыштардан, күнді шеңберден құрастырдым...">${esc(state.homework)}</textarea>
+      </div>
+      <div class="field" style="margin-bottom:0;">
+        <label for="hwFormats">Қандай форматтарда сақтадыңыз?</label>
+        <input type="text" id="hwFormats" placeholder="мысалы, .AI және .PNG" value="${esc(state.homeworkFormats)}">
+      </div>
+    </div>`;
+  document.getElementById('hwText').addEventListener('input', e=>{ state.homework = e.target.value; });
+  document.getElementById('hwFormats').addEventListener('input', e=>{ state.homeworkFormats = e.target.value; });
+}
+
+function renderReflection(){
+  stageEl.innerHTML = `
+    ${kicker("Р","5 мин","Қорытындылау және рефлексия")}
+    <p class="lede">Сабақ соңында жасалған композициялар бірге қаралады: нысандар дұрыс құрылған ба, көшірмелер орынды қолданылған ба, форматтар дұрыс таңдалған ба.</p>
+    <div class="card">
+      <div class="field" style="margin-bottom:0;">
+        <label for="reflText">Бүгінгі сабақтан алған ең маңызды түйінді бір-екі сөйлеммен жазыңыз</label>
+        <textarea id="reflText" placeholder="Мысалы: Көшіру мен Көшірменің айырмашылығын және әр операцияның ыстық пернелерін түсіндім...">${esc(state.reflection)}</textarea>
+      </div>
+    </div>`;
+  document.getElementById('reflText').addEventListener('input', e=>{ state.reflection = e.target.value; });
+}
+
+/* ---------- TASK DISPATCH ---------- */
+const HTML_BY_TYPE = {};
+const WIRE_BY_TYPE = {};
+
+function renderTask(task){
+  stageEl.innerHTML = `${kicker(task.id, task.time, "Тапсырма "+task.id)}`;
+  const wrap = document.createElement('div');
+  wrap.className = "task-card";
+  wrap.innerHTML = HTML_BY_TYPE[task.type](task);
+  stageEl.appendChild(wrap);
+  WIRE_BY_TYPE[task.type](task, wrap);
+  if(state.answers[task.id]) showLockedFeedback(task, wrap);
+}
+
+function taskHead(task, title){ return `<div class="task-head"><span class="task-badge">T${task.id}</span><h3>${title}</h3></div>`; }
+function feedbackBlock(){ return `<div class="feedback" id="fb"></div>`; }
+function setFeedback(wrap, cls, scoreText, msg){
+  const fb = wrap.querySelector('#fb');
+  fb.className = "feedback show " + cls;
+  fb.innerHTML = `<span class="score">${scoreText}</span>${msg}`;
+}
+function recordAnswer(taskId, score, max, detail){ state.answers[taskId] = {score, max, detail}; updateNav(); }
+function clsFor(score){ return score>=8?"ok":score>=4?"mid":"bad"; }
+
+/* ----- MCQ ----- */
+HTML_BY_TYPE.mcq = task => taskHead(task,"Бір дұрыс жауапты таңдаңыз") + `
+  <div class="task-body">
+    <p class="q">${task.q}</p>
+    <div class="opt-list">
+      ${task.options.map((o,i)=>`<button class="opt circle" data-i="${i}"><span class="mark"></span><span>${o}</span></button>`).join('')}
+    </div>
+    ${feedbackBlock()}
+    <div class="btn-row"><button class="btn btn-good btn-block" id="checkBtn" disabled>Тексеру</button></div>
+  </div>`;
+WIRE_BY_TYPE.mcq = (task, wrap) => {
+  let picked = -1;
+  const opts = [...wrap.querySelectorAll('.opt')];
+  const checkBtn = wrap.querySelector('#checkBtn');
+  opts.forEach(btn=>btn.addEventListener('click', ()=>{
+    if(btn.disabled) return;
+    picked = +btn.dataset.i;
+    opts.forEach(o=>o.classList.remove('selected'));
+    btn.classList.add('selected');
+    checkBtn.disabled = false;
+  }));
+  checkBtn.addEventListener('click', ()=>{
+    opts.forEach(o=>o.disabled=true);
+    checkBtn.disabled = true;
+    const ok = picked === task.correct;
+    opts[task.correct].classList.add('correct');
+    if(!ok) opts[picked].classList.add('wrong');
+    setFeedback(wrap, ok?"ok":"bad", ok?"10 / 10 ұпай":"0 / 10 ұпай", task.explain);
+    recordAnswer(task.id, ok?10:0, 10, task.options[picked]);
+  });
+};
+
+/* ----- CLASSIFY ----- */
+HTML_BY_TYPE.classify = task => taskHead(task,`${task.labelA} немесе ${task.labelB}`) + `
+  <div class="task-body">
+    <p class="q">${task.q}</p>
+    ${task.items.map((it,i)=>`
+      <div class="classify-item" data-i="${i}">
+        <div class="txt">${it.txt}</div>
+        <div class="pill-row">
+          <button class="pill" data-v="a">${task.labelA}</button>
+          <button class="pill" data-v="b">${task.labelB}</button>
+        </div>
+      </div>`).join('')}
+    ${feedbackBlock()}
+    <div class="btn-row"><button class="btn btn-good btn-block" id="checkBtn" disabled>Тексеру</button></div>
+  </div>`;
+WIRE_BY_TYPE.classify = (task, wrap) => {
+  const picks = new Array(task.items.length).fill(null);
+  const rows = [...wrap.querySelectorAll('.classify-item')];
+  const checkBtn = wrap.querySelector('#checkBtn');
+  rows.forEach((row,i)=>{
+    row.querySelectorAll('.pill').forEach(p=>p.addEventListener('click', ()=>{
+      if(p.disabled) return;
+      picks[i] = p.dataset.v;
+      row.querySelectorAll('.pill').forEach(x=>x.classList.remove('sel-a','sel-b'));
+      p.classList.add(p.dataset.v==='a'?'sel-a':'sel-b');
+      checkBtn.disabled = picks.includes(null);
+    }));
+  });
+  checkBtn.addEventListener('click', ()=>{
+    let correctCount = 0;
+    rows.forEach((row,i)=>{
+      const pills = [...row.querySelectorAll('.pill')];
+      pills.forEach(p=>p.disabled=true);
+      const isRight = picks[i] === task.items[i].ans;
+      if(isRight) correctCount++;
+      pills.find(p=>p.dataset.v===picks[i]).classList.add(isRight?'right':'wrong');
+      if(!isRight) pills.find(p=>p.dataset.v===task.items[i].ans).classList.add('right');
+    });
+    checkBtn.disabled = true;
+    const score = Math.round(correctCount/task.items.length*10);
+    setFeedback(wrap, clsFor(score), `${score} / 10 ұпай`, `${correctCount} / ${task.items.length} дұрыс жауап. Көшіру (Ctrl+C/V/Shift+V) буферді пайдаланады, ал Көшірме (Ctrl+D, Alt+сүйреу) буферсіз жұмыс істейді.`);
+    recordAnswer(task.id, score, 10, `${correctCount}/${task.items.length}`);
+  });
+};
+
+/* ----- MATCH ----- */
+HTML_BY_TYPE.match = task => {
+  const shuffled = [...task.correctDesc].sort(()=>Math.random()-0.5);
+  window.__matchOptions = window.__matchOptions || {};
+  window.__matchOptions[task.id] = shuffled;
+  return taskHead(task,"Терминдер мен анықтамаларды сәйкестендіріңіз") + `
+    <div class="task-body">
+      <p class="q">${task.q}</p>
+      ${task.terms.map((term,i)=>`
+        <div class="match-item">
+          <div class="term"><span class="chip">${term}</span></div>
+          <select data-i="${i}">
+            <option value="">— анықтаманы таңдаңыз —</option>
+            ${shuffled.map((d,j)=>`<option value="${j}">${d}</option>`).join('')}
+          </select>
+        </div>`).join('')}
+      ${feedbackBlock()}
+      <div class="btn-row"><button class="btn btn-good btn-block" id="checkBtn">Тексеру</button></div>
+    </div>`;
+};
+WIRE_BY_TYPE.match = (task, wrap) => {
+  const selects = [...wrap.querySelectorAll('select')];
+  const shuffled = window.__matchOptions[task.id];
+  wrap.querySelector('#checkBtn').addEventListener('click', ()=>{
+    let correctCount = 0;
+    selects.forEach((sel,i)=>{
+      sel.disabled = true;
+      const chosenText = sel.value === "" ? "" : shuffled[+sel.value];
+      const isRight = chosenText === task.correctDesc[i];
+      if(isRight) correctCount++;
+      sel.style.borderColor = isRight ? "var(--good)" : "var(--bad)";
+    });
+    wrap.querySelector('#checkBtn').disabled = true;
+    const score = Math.round(correctCount/task.terms.length*10);
+    setFeedback(wrap, clsFor(score), `${score} / 10 ұпай`, `${correctCount} / ${task.terms.length} дұрыс сәйкестік.`);
+    recordAnswer(task.id, score, 10, `${correctCount}/${task.terms.length}`);
+  });
+};
+
+/* ----- TUNE (slider with live preview) ----- */
+HTML_BY_TYPE.tune = task => taskHead(task,"Сырғытпаны реттеңіз") + `
+  <div class="task-body">
+    <p class="q">${task.q}</p>
+    <div class="preview-box"><div id="prevText" style="${task.sampleStyle}">${task.sample}</div></div>
+    <div class="slider-row">
+      <div class="slabel"><span>${task.label}</span><span id="tVal"></span></div>
+      <input type="range" id="tSlider" min="${task.min}" max="${task.max}" step="${task.step}" value="${task.start}">
+    </div>
+    ${feedbackBlock()}
+    <div class="btn-row"><button class="btn btn-good btn-block" id="checkBtn">Тексеру</button></div>
+  </div>`;
+WIRE_BY_TYPE.tune = (task, wrap) => {
+  const slider = wrap.querySelector('#tSlider');
+  const prev = wrap.querySelector('#prevText');
+  const val = wrap.querySelector('#tVal');
+  function upd(){
+    const v = parseFloat(slider.value);
+    prev.style[task.prop] = v + task.unit;
+    val.textContent = v.toFixed(2) + task.unit;
+  }
+  slider.addEventListener('input', upd);
+  upd();
+  wrap.querySelector('#checkBtn').addEventListener('click', ()=>{
+    const v = parseFloat(slider.value);
+    const [lo, hi] = task.ideal;
+    const d = v < lo ? lo - v : v > hi ? v - hi : 0;
+    const span = task.max - task.min;
+    const score = d === 0 ? 10 : Math.max(0, Math.round(10 * (1 - (d/span)*5)));
+    slider.disabled = true;
+    wrap.querySelector('#checkBtn').disabled = true;
+    setFeedback(wrap, clsFor(score), `${score} / 10 ұпай`, `Сіз таңдаған мән: ${v.toFixed(2)}${task.unit}. Қолайлы аралық: ${lo}–${hi}${task.unit}. ${task.explain}`);
+    recordAnswer(task.id, score, 10, `${v.toFixed(2)}${task.unit}`);
+  });
+};
+
+/* ----- ORDER ----- */
+HTML_BY_TYPE.order = task => {
+  window.__orderState = window.__orderState || {};
+  window.__orderState[task.id] = [...task.correctOrder].sort(()=>Math.random()-0.5);
+  return taskHead(task,"Ретін реттеңіз") + `
+    <div class="task-body">
+      <p class="q">${task.q}</p>
+      <div id="orderList"></div>
+      ${feedbackBlock()}
+      <div class="btn-row"><button class="btn btn-good btn-block" id="checkBtn">Тексеру</button></div>
+    </div>`;
+};
+function renderOrderList(task, wrap){
+  const list = window.__orderState[task.id];
+  const container = wrap.querySelector('#orderList');
+  container.innerHTML = list.map((txt,i)=>`
+    <div class="order-item">
+      <div class="idx">${i+1}</div>
+      <div class="txt">${txt}</div>
+      <div class="order-btns">
+        <button data-dir="up" data-i="${i}" ${i===0?'disabled':''}>↑</button>
+        <button data-dir="down" data-i="${i}" ${i===list.length-1?'disabled':''}>↓</button>
+      </div>
+    </div>`).join('');
+  container.querySelectorAll('button').forEach(b=>b.addEventListener('click', ()=>{
+    const i = +b.dataset.i;
+    const j = b.dataset.dir==='up' ? i-1 : i+1;
+    if(j<0 || j>=list.length) return;
+    [list[i],list[j]] = [list[j],list[i]];
+    renderOrderList(task, wrap);
+  }));
+}
+WIRE_BY_TYPE.order = (task, wrap) => {
+  renderOrderList(task, wrap);
+  wrap.querySelector('#checkBtn').addEventListener('click', ()=>{
+    const list = window.__orderState[task.id];
+    let correctPos = 0;
+    list.forEach((txt,i)=>{ if(txt === task.correctOrder[i]) correctPos++; });
+    wrap.querySelectorAll('.order-btns button').forEach(b=>b.disabled=true);
+    wrap.querySelector('#checkBtn').disabled = true;
+    const score = Math.round(correctPos/task.correctOrder.length*10);
+    setFeedback(wrap, clsFor(score), `${score} / 10 ұпай`, `${correctPos} / ${task.correctOrder.length} қадам дұрыс орында тұр.`);
+    recordAnswer(task.id, score, 10, list.join(" > "));
+  });
+};
+
+/* ----- NUMBER ----- */
+HTML_BY_TYPE.number = task => taskHead(task,"Санды есептеп жазыңыз") + `
+  <div class="task-body">
+    <p class="q">${task.q}</p>
+    <div class="field" style="margin-top:12px;">
+      <input type="text" inputmode="numeric" id="numInput" placeholder="Жауабыңыз${task.unitHint? ' ('+task.unitHint+')':''}">
+    </div>
+    ${feedbackBlock()}
+    <div class="btn-row"><button class="btn btn-good btn-block" id="checkBtn">Тексеру</button></div>
+  </div>`;
+WIRE_BY_TYPE.number = (task, wrap) => {
+  const input = wrap.querySelector('#numInput');
+  wrap.querySelector('#checkBtn').addEventListener('click', ()=>{
+    const v = parseFloat((input.value||"").replace(',', '.'));
+    const ok = v === task.answer;
+    input.disabled = true;
+    wrap.querySelector('#checkBtn').disabled = true;
+    setFeedback(wrap, ok?"ok":"bad", ok?"10 / 10 ұпай":"0 / 10 ұпай", ok ? "Дұрыс!" : `Дұрыс жауап: ${task.answer}.`);
+    recordAnswer(task.id, ok?10:0, 10, input.value);
+  });
+};
+
+/* ----- TRUE/FALSE ----- */
+HTML_BY_TYPE.tf = task => taskHead(task,"Ақиқат немесе жалған") + `
+  <div class="task-body">
+    <p class="q">${task.q}</p>
+    ${task.statements.map((st,i)=>`
+      <div class="tf-item" data-i="${i}">
+        <div class="stmt">${st.s}</div>
+        <div class="tf-btns">
+          <button class="tf-btn" data-v="true">Ақиқат</button>
+          <button class="tf-btn" data-v="false">Жалған</button>
+        </div>
+      </div>`).join('')}
+    ${feedbackBlock()}
+    <div class="btn-row"><button class="btn btn-good btn-block" id="checkBtn" disabled>Тексеру</button></div>
+  </div>`;
+WIRE_BY_TYPE.tf = (task, wrap) => {
+  const picks = new Array(task.statements.length).fill(null);
+  const items = [...wrap.querySelectorAll('.tf-item')];
+  const checkBtn = wrap.querySelector('#checkBtn');
+  items.forEach((item,i)=>{
+    item.querySelectorAll('.tf-btn').forEach(b=>b.addEventListener('click', ()=>{
+      if(b.disabled) return;
+      picks[i] = b.dataset.v === 'true';
+      item.querySelectorAll('.tf-btn').forEach(x=>x.classList.remove('sel-true','sel-false'));
+      b.classList.add(b.dataset.v==='true'?'sel-true':'sel-false');
+      checkBtn.disabled = picks.includes(null);
+    }));
+  });
+  checkBtn.addEventListener('click', ()=>{
+    let correctCount = 0;
+    items.forEach((item,i)=>{
+      const btns = [...item.querySelectorAll('.tf-btn')];
+      btns.forEach(b=>b.disabled=true);
+      const isRight = picks[i] === task.statements[i].correct;
+      if(isRight) correctCount++;
+      btns.find(b=>(b.dataset.v==='true')===picks[i]).classList.add(isRight?'right':'wrong');
+      if(!isRight) btns.find(b=>(b.dataset.v==='true')===task.statements[i].correct).classList.add('right');
+    });
+    checkBtn.disabled = true;
+    const score = Math.round(correctCount/task.statements.length*10);
+    setFeedback(wrap, clsFor(score), `${score} / 10 ұпай`, `${correctCount} / ${task.statements.length} дұрыс жауап берілді.`);
+    recordAnswer(task.id, score, 10, `${correctCount}/${task.statements.length}`);
+  });
+};
+
+/* ----- MULTI ----- */
+HTML_BY_TYPE.multi = task => taskHead(task,"Дұрыс жауаптарды белгілеңіз") + `
+  <div class="task-body">
+    <p class="q">${task.q}</p>
+    <div class="opt-list">
+      ${task.options.map((o,i)=>`<button class="opt" data-i="${i}"><span class="mark"></span><span>${o}</span></button>`).join('')}
+    </div>
+    ${feedbackBlock()}
+    <div class="btn-row"><button class="btn btn-good btn-block" id="checkBtn">Тексеру</button></div>
+  </div>`;
+WIRE_BY_TYPE.multi = (task, wrap) => {
+  const picked = new Set();
+  const opts = [...wrap.querySelectorAll('.opt')];
+  opts.forEach(btn=>btn.addEventListener('click', ()=>{
+    if(btn.disabled) return;
+    const i = +btn.dataset.i;
+    if(picked.has(i)){ picked.delete(i); btn.classList.remove('selected'); }
+    else { picked.add(i); btn.classList.add('selected'); }
+  }));
+  wrap.querySelector('#checkBtn').addEventListener('click', ()=>{
+    opts.forEach(o=>o.disabled=true);
+    wrap.querySelector('#checkBtn').disabled = true;
+    const correctSet = new Set(task.correctIdx);
+    let cs = 0, ws = 0;
+    opts.forEach((btn,i)=>{
+      const isC = correctSet.has(i), isP = picked.has(i);
+      btn.classList.remove('selected');
+      if(isP && isC){ cs++; btn.classList.add('correct'); }
+      else if(isP && !isC){ ws++; btn.classList.add('wrong'); }
+      else if(!isP && isC){ btn.classList.add('correct'); }
+    });
+    const score = Math.max(0, Math.min(10, Math.round(((cs-ws)/correctSet.size)*10)));
+    setFeedback(wrap, clsFor(score), `${score} / 10 ұпай`, `${cs} / ${correctSet.size} дұрыс жауап табылды${ws?`, ${ws} қате таңдау бар`:''}.`);
+    recordAnswer(task.id, score, 10, `${cs}/${correctSet.size} дұрыс`);
+  });
+};
+
+/* ----- LOCKED FEEDBACK ON REVISIT ----- */
+function showLockedFeedback(task, wrap){
+  const a = state.answers[task.id];
+  wrap.querySelectorAll('button, input, select').forEach(el=>{ if(el.id !== 'checkBtn') el.disabled = true; });
+  const checkBtn = wrap.querySelector('#checkBtn');
+  if(checkBtn){ checkBtn.disabled = true; checkBtn.textContent = "Тексерілді"; }
+  const fb = wrap.querySelector('#fb');
+  if(fb){
+    fb.className = "feedback show " + clsFor(a.score);
+    fb.innerHTML = `<span class="score">${a.score} / ${a.max} ұпай</span>Бұл тапсырма тексерілді.`;
+  }
+}
+
+/* ---------- RESULTS ---------- */
+function totals(){
+  let total = 0, max = 0;
+  TASKS.forEach(t=>{ const a = state.answers[t.id]; total += a ? a.score : 0; max += 10; });
+  return {total, max};
+}
+function renderResults(){
+  const {total, max} = totals();
+  const rows = TASKS.map(t=>{
+    const a = state.answers[t.id];
+    return `<tr><td>Тапсырма ${t.id}</td><td class="sc">${a? a.score : 0} / 10</td></tr>`;
+  }).join('');
+  stageEl.innerHTML = `
+    ${kicker("✓","қорытынды","Нәтиже және жіберу")}
+    <p class="lede">${esc(state.name)} (${esc(state.group)}) — жауаптарыңыз төменде. «Нәтижені жіберу» батырмасын бассаңыз, мәліметтер мұғалімнің Google Кестесіне жазылады. Батырма тек бір рет басылады.</p>
+    <div class="card">
+      <table class="results">
+        <thead><tr><th>Тапсырма</th><th style="text-align:right;">Ұпай</th></tr></thead>
+        <tbody>${rows}</tbody>
+        <tfoot><tr class="total-row"><td>Жалпы балл</td><td class="sc">${total} / ${max}</td></tr></tfoot>
+      </table>
+      <div id="sendStatus" class="status-line"></div>
+      <div class="btn-row"><button class="btn btn-ghost btn-block" id="copyBtn">Нәтижені көшіру</button></div>
+    </div>`;
+  if(state.sent){
+    const s0 = document.getElementById('sendStatus');
+    s0.className = "status-line show ok";
+    s0.textContent = "Нәтиже жіберілген. Қайта жіберу мүмкін емес.";
+  }
+  document.getElementById('copyBtn').addEventListener('click', ()=>{
+    const st = document.getElementById('sendStatus');
+    navigator.clipboard?.writeText(buildSummaryText()).then(()=>{
+      if(!state.sent){ st.className = "status-line show ok"; st.textContent = "Нәтиже алмасу буферіне көшірілді."; }
+    }).catch(()=>{
+      st.className = "status-line show bad"; st.textContent = "Көшіру мүмкін болмады, қолмен көшіріңіз.";
+    });
+  });
+}
+
+function buildSummaryText(){
+  const {total, max} = totals();
+  const lines = [`Топ: ${state.group}`, `Аты-жөні: ${state.name}`, `Күні: ${new Date().toLocaleString('kk-KZ')}`];
+  TASKS.forEach(t=>{ const a = state.answers[t.id]; lines.push(`Тапсырма ${t.id}: ${a? a.score : 0} / 10`); });
+  lines.push(`Жалпы балл: ${total} / ${max}`);
+  lines.push(`Практикалық сессия: ${state.practical || "(жазылмаған)"}`);
+  lines.push(`Үй тапсырмасы: ${state.homework || "(жазылмаған)"}`);
+  lines.push(`Сақталған форматтар: ${state.homeworkFormats || "(жазылмаған)"}`);
+  lines.push(`Рефлексия: ${state.reflection || "(жазылмаған)"}`);
+  return lines.join("\n");
+}
+
+async function sendResults(){
+  if(state.sent || state.sending) return;
+  const st = document.getElementById('sendStatus');
+  const {total, max} = totals();
+  const perTask = {};
+  TASKS.forEach(t=>{ const a = state.answers[t.id]; perTask["task"+t.id] = a ? a.score : 0; });
+  const payload = {
+    timestamp: new Date().toISOString(),
+    group: state.group, name: state.name,
+    ...perTask, total, max,
+    practical: state.practical,
+    homework: state.homework,
+    homeworkFormats: state.homeworkFormats,
+    reflection: state.reflection
+  };
+  if(!SCRIPT_URL || SCRIPT_URL.indexOf("PASTE_YOUR") === 0){
+    st.className = "status-line show bad";
+    st.textContent = "Google Кестенің сілтемесі орнатылмаған. Мұғалім SCRIPT_URL мәнін толтыруы керек. Әзірге нәтижені «Нәтижені көшіру» батырмасымен сақтаңыз.";
+    return;
+  }
+  state.sending = true;
+  updateNav();
+  st.className = "status-line show wait";
+  st.textContent = "Жіберілуде...";
+  try{
+    await fetch(SCRIPT_URL, {
+      method:"POST", mode:"no-cors",
+      headers:{"Content-Type":"text/plain;charset=utf-8"},
+      body: JSON.stringify(payload)
+    });
+    state.sent = true;
+    state.sending = false;
+    st.className = "status-line show ok";
+    st.textContent = "Нәтиже сәтті жіберілді. Рахмет!";
+    updateNav();
+  }catch(err){
+    state.sending = false;
+    updateNav();
+    st.className = "status-line show bad";
+    st.textContent = "Жіберу кезінде қате шықты. Интернет байланысын тексеріп, қайта көріңіз.";
+  }
+}
+
+/* ===================== NAV ===================== */
+btnBack.addEventListener('click', ()=>{ if(state.cur>0){ state.cur--; render(); } });
+btnNext.addEventListener('click', ()=>{
+  const step = steps[state.cur];
+  if(step.type === "results"){ sendResults(); return; }
+  if(state.cur < steps.length-1){ state.cur++; render(); }
+});
+
+render();
+</script>
+</body>
+</html>
